@@ -28,6 +28,8 @@ jobs:
       matrix:
         os: ["ubuntu20.04", "ubuntu22.04", "centos7"]
     runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/antmicro/openroad-flow-scripts
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -58,3 +60,17 @@ jobs:
             cmd="source /opt/rh/rh-python38/enable; ${cmd}"
           fi
           docker run openroad/flow-${{ matrix.os }}-builder /bin/bash -c "${cmd}"
+      - name: Tag the image
+        run: |
+          docker tag openroad/flow-${{ matrix.os }}-builder ${{ env.IMAGE }}/${{ matrix.os }}
+      - name: Login to GitHub Container Registry (GHCR)
+        if: github.event_name != 'pull_request' && github.repository == 'antmicro/OpenROAD-flow-scripts'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: gha
+          password: ${{ github.token }}
+
+      - name: Push container image to GitHub Container Registry (GHCR)
+        if: github.event_name != 'pull_request' && github.repository == 'antmicro/OpenROAD-flow-scripts'
+        run: docker push ${{ env.IMAGE }}/${{ matrix.os }}
