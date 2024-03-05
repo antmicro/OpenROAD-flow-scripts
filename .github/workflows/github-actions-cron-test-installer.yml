@@ -29,7 +29,7 @@ jobs:
         os: ["ubuntu20.04", "ubuntu22.04", "centos7"]
     runs-on: ubuntu-latest
     env:
-      IMAGE: ghcr.io/antmicro/OpenROAD-flow-scripts
+      IMAGE: ghcr.io/antmicro/openroad-flow-scripts
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
