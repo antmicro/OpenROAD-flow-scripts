@@ -9,7 +9,7 @@ The goal is to provide a web browser experience of the OpenROAD GUI. Solution wo
 3. Open VSCode and install the [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension
 4. Connect to the generated codespace
 5. Open a web browser and connect to url: `localhost:6080`
-6. Alternatively, you can use a VNC client to connect to `localhost:5980`
+6. Alternatively, you can use a VNC client to connect to `localhost:5901`
 
 ## Developer
 
@@ -17,4 +17,5 @@ OpenROAD Flow Scripts provide a docker image generation script `etc/DockerHelper
 
 Useful resources:
 * [Development loop](https://code.visualstudio.com/docs/devcontainers/create-dev-container#_full-configuration-edit-loop)
-* [devcontainer json reference](https://containers.dev/implementors/json_reference/)
+* [devcontainer JSON reference](https://containers.dev/implementors/json_reference/)
+* [Desktop lite feature](https://github.com/microsoft/vscode-dev-containers/blob/main/script-library/docs/desktop-lite.md)
