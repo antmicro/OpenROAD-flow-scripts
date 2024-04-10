@@ -1,4 +1,4 @@
-name: Prebuild docker image
+name: Prebuild docker images
 on:
   push:
   pull_request:
