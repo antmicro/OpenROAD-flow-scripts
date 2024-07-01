@@ -1,0 +1,111 @@
+name: Build and publish ORFS image
+on:
+  schedule:
+  - cron: "0 8 * * SUN"
+  push:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - 'etc/DockerHelper.sh'
+      - '.github/workflows/github-actions-publish-docker-images.yml'
+      - 'build_openroad.sh'
+      - 'env.sh'
+      - 'flow/Makefile'
+      - 'docker/Dockerfile.dev'
+      - 'docker/Dockerfile.builder'
+  pull_request:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - 'etc/DockerHelper.sh'
+      - '.github/workflows/github-actions-publish-docker-images.yml'
+      - 'build_openroad.sh'
+      - 'env.sh'
+      - 'flow/Makefile'
+      - 'docker/Dockerfile.dev'
+      - 'docker/Dockerfile.builder'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  testInstaller:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [["ubuntu20.04", "ubuntu:20.04"], ["ubuntu22.04", "ubuntu:22.04"]]
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/antmicro/openroad-flow-scripts-test-cache/${{ matrix.os[0] }}
+      IMAGE_DEPS: ghcr.io/antmicro/openroad-flow-scripts-test-cache-deps/${{ matrix.os[0] }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+          submodules: recursive
+
+      - name: Network Setup
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bridge-utils
+          sudo pkill docker
+          sudo iptables -t nat -F
+          sudo ifconfig docker0 down
+          sudo brctl delbr docker0
+          sudo service docker restart
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry (GHCR)
+        if: github.event_name != 'pull_request' && github.repository == 'antmicro/OpenROAD-flow-scripts'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: gha
+          password: ${{ github.token }}
+
+      - name: Copy OpenROAD installer
+        run: cp tools/OpenROAD/etc/DependencyInstaller.sh etc/InstallerOpenROAD.sh
+
+      - name: Build and export dependencies image
+        uses: docker/build-push-action@v6
+        with:
+          context: etc
+          push: true
+          tags: ${{ env.IMAGE_DEPS }}:latest
+          file: docker/Dockerfile.dev
+          build-args: |
+            fromImage=${{ matrix.os[1] }}
+            numThreads=$(nproc)
+          cache-from: type=registry,ref=${{ env.IMAGE_DEPS }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_DEPS }}:buildcache,mode=max
+
+      - name: Build ORFS image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ${{ env.IMAGE }}:latest
+          file: docker/Dockerfile.builder
+          build-args: |
+            fromImage=${{ env.IMAGE_DEPS }}:latest
+            numThreads=$(nproc)
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+
+      - name: Test build
+        run: |
+          cmd="source ./env.sh && yosys -help && openroad -help && make -C flow ;"
+          docker run ${{ env.IMAGE }}:latest /bin/bash -c "${cmd}"
+
+      - name: Export ORFS image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}:latest
+          file: docker/Dockerfile.builder
+          build-args: |
+            fromImage=${{ env.IMAGE_DEPS }}rlatest
+            numThreads=$(nproc)
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
