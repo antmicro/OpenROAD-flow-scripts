@@ -26,18 +26,10 @@ jobs:
           username: gha
           password: ${{ github.token }}
 
-      - name: Build ORFS
-        run: |
-          docker build -t ghcr.io/antmicro/openroad-flow-scripts:orfs -f tools/codespace/Dockerfile-orfs .
-
-      - name: Push container image to GitHub Container Registry (GHCR)
-        if: github.event_name != 'pull_request' && github.repository == 'antmicro/openroad-flow-scripts'
-        run: docker push ghcr.io/antmicro/openroad-flow-scripts:orfs
-
       - name: Build LXQt
         run: |
-          docker build -t ghcr.io/antmicro/openroad-flow-scripts:lxqt -f tools/codespace/Dockerfile-lxqt .
+          docker build -t ghcr.io/antmicro/openroad-flow-scripts:lxqt-test -f tools/codespace/Dockerfile-lxqt .
 
       - name: Push container image to GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request' && github.repository == 'antmicro/openroad-flow-scripts'
-        run: docker push ghcr.io/antmicro/openroad-flow-scripts:lxqt
+        run: docker push ghcr.io/antmicro/openroad-flow-scripts:lxqt-test
