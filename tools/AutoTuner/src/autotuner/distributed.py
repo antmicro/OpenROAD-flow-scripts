@@ -110,10 +110,11 @@ class AutoTunerBase(tune.Trainable):
             parameters=self.parameters,
             flow_variant=self._variant,
             install_path=INSTALL_PATH,
+            stage=args.to_stage,
         )
         self.step_ += 1
         (score, effective_clk_period, num_drc) = self.evaluate(
-            read_metrics(metrics_file)
+            read_metrics(metrics_file, args.to_stage)
         )
         # Feed the score back to Tune.
         # return must match 'metric' used in tune.run()
@@ -455,7 +456,7 @@ if __name__ == "__main__":
         TrainClass = set_training_class(args.eval)
         # PPAImprov requires a reference file to compute training scores.
         if args.eval == "ppa-improv":
-            reference = read_metrics(args.reference)
+            reference = read_metrics(args.reference, args.to_stage)
 
         tune_args = dict(
             name=args.experiment,
