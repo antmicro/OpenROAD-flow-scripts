@@ -74,7 +74,6 @@ if {[env_var_exists_and_non_empty DFF_LIB_FILE]} {
 } else {
   dfflibmap -liberty $::env(DONT_USE_SC_LIB) {*}$dfflibmap_args
 }
-opt
 
 log_cmd abc {*}$abc_args
 
