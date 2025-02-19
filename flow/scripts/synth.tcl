@@ -53,8 +53,6 @@ if {[env_var_exists_and_non_empty ADDER_MAP_FILE]} {
   # map full adders
   techmap -map $::env(ADDER_MAP_FILE)
   techmap
-  # Quick optimization
-  opt -fast -purge
 }
 
 # Technology mapping of latches
