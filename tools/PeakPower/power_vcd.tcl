@@ -6,4 +6,5 @@ read_sdc gcd_sky130hd.sdc
 read_spef gcd_sky130hd.spef
 read_vcd -scope gcd_tb/gcd1 temp.vcd
 report_activity_annotation
-report_power
+report_power > output_power
+exit
