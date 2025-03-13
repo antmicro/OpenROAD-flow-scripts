@@ -19,11 +19,9 @@ import re
 import subprocess
 
 class ClockEmits:
-    clock_time: int
     clock_emits: str
 
     def __init__(self):
-        self.clock_time = 0
         self.clock_emits = ''
 
 class VCDFile:
@@ -44,26 +42,36 @@ class VCDFile:
     def parse(self, vcd_file_path: str, clock_period: int):
         with open(vcd_file_path, 'r', encoding="utf8") as vcd_file:
             reading_header = True
+            reading_dumpvars = False
             
             for line in vcd_file:
+                match = re.match(r'#0', line)
+                if match:
+                    reading_dumpvars = True
+
+                    self.initial_clock_emits = ClockEmits()
+                    self.initial_clock_emits.clock_emits += line
+
+                    continue
+
                 match = re.match(r'#(\d+)', line)
                 if match:
                     reading_header = False
+                    reading_dumpvars = False
 
                     timestamp = int(match.group(1))
-
-                    if timestamp - self.last_timestamp >= clock_period or timestamp == 0:
-                        if self.current_clock_emits is not None and self.current_clock_emits != self.initial_clock_emits:
+                    if timestamp - self.last_timestamp > clock_period or self.current_clock_emits is None:
+                        if self.current_clock_emits is not None:
                             self.clock_emits_list.append(self.current_clock_emits)
                             self.last_timestamp += clock_period
 
                         self.current_clock_emits = ClockEmits()
-                        self.current_clock_emits.clock_time = timestamp
                         
-                        if self.initial_clock_emits is None:
-                            self.initial_clock_emits = self.current_clock_emits
-                    
                     line = f'#{timestamp - self.last_timestamp}\n'
+
+                if reading_dumpvars:
+                    self.initial_clock_emits.clock_emits += line
+                    continue
 
                 if reading_header:
                     self.header_contents += line
