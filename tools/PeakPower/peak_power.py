@@ -36,7 +36,7 @@ class VCDFile:
         self.clock_emits_list = []
         self.current_clock_emits = None
 
-    def parse(self, vcd_file_path):
+    def parse(self, vcd_file_path: str):
         with open(vcd_file_path, 'r', encoding="utf8") as vcd_file:
             reading_header = True
             
@@ -58,6 +58,31 @@ class VCDFile:
                 self.current_clock_emits.clock_emits += line
 
 
+class VCDIterator:
+    current_clock_emits_index: int
+    source_vcd_file: VCDFile
+
+    def __init__(self, vcd_file: VCDFile):
+        self.current_clock_emits_index = 0
+        self.source_vcd_file = vcd_file
+
+    def next_vcd_clock_chunk_available(self):
+        return self.current_clock_emits_index < len(self.source_vcd_file.clock_emits_list)
+
+    def create_next_vcd_clock_chunk(self):
+        vcd_contents = self.source_vcd_file.header_contents
+        vcd_contents += self.source_vcd_file.clock_emits_list[self.current_clock_emits_index].clock_emits
+
+        self.current_clock_emits_index += 1
+
+        return vcd_contents
+    
+
+def save_to_file(file_contents: str, file_path: str):
+    with open(file_path, 'w') as file:
+        file.write(file_contents)
+
+
 parser = argparse.ArgumentParser(
     allow_abbrev=False,
     formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -66,11 +91,13 @@ parser.add_argument('--vcd', action='store', help='VCD file')
 parser.set_defaults(stop=True)
 args = parser.parse_args()
 
+scratch_file_name = 'temp.vcd'
+
 vcd = VCDFile()
 vcd.parse(args.vcd)
 
-print(vcd.header_contents)
+vcd_iterator = VCDIterator(vcd)
 
-for clock_emits in vcd.clock_emits_list:
-    print(f'Clock emits from clock {clock_emits.clock_time}')
-    print(clock_emits.clock_emits)
+while vcd_iterator.next_vcd_clock_chunk_available():
+    vcd_contents = vcd_iterator.create_next_vcd_clock_chunk()
+    save_to_file(vcd_contents, scratch_file_name)
