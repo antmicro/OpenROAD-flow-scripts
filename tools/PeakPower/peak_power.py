@@ -31,7 +31,7 @@ class VCDFile:
     current_clock_time: int
     clock_emits_list: list[ClockEmits]
     initial_clock_emits: ClockEmits
-    current_clock_emits = ClockEmits
+    current_clock_emits: ClockEmits
 
     def __init__(self):
         self.header_contents = ''
@@ -39,8 +39,9 @@ class VCDFile:
         self.clock_emits_list = []
         self.initial_clock_emits = None
         self.current_clock_emits = None
+        self.last_timestamp = 0
 
-    def parse(self, vcd_file_path: str):
+    def parse(self, vcd_file_path: str, clock_period: int):
         with open(vcd_file_path, 'r', encoding="utf8") as vcd_file:
             reading_header = True
             
@@ -49,14 +50,20 @@ class VCDFile:
                 if match:
                     reading_header = False
 
-                    if self.current_clock_emits is not None and self.current_clock_emits != self.initial_clock_emits:
-                        self.clock_emits_list.append(self.current_clock_emits)
+                    timestamp = int(match.group(1))
 
-                    self.current_clock_emits = ClockEmits()
-                    self.current_clock_emits.clock_time = match.group(1)
+                    if timestamp - self.last_timestamp >= clock_period or timestamp == 0:
+                        if self.current_clock_emits is not None and self.current_clock_emits != self.initial_clock_emits:
+                            self.clock_emits_list.append(self.current_clock_emits)
+                            self.last_timestamp += clock_period
+
+                        self.current_clock_emits = ClockEmits()
+                        self.current_clock_emits.clock_time = timestamp
+                        
+                        if self.initial_clock_emits is None:
+                            self.initial_clock_emits = self.current_clock_emits
                     
-                    if self.initial_clock_emits is None:
-                        self.initial_clock_emits = self.current_clock_emits
+                    line = f'#{timestamp - self.last_timestamp}\n'
 
                 if reading_header:
                     self.header_contents += line
@@ -66,23 +73,68 @@ class VCDFile:
                 self.current_clock_emits.clock_emits += line
 
 
+class Signal:
+    last_signal_value: str
+
+    def __init__(self, initial_value: str):
+        self.last_signal_value = initial_value
+
+
 class VCDIterator:
     current_clock_emits_index: int
     source_vcd_file: VCDFile
+    signals: dict[str, Signal]
+
+    def parse_initial_signals_values(self):
+        for line in self.source_vcd_file.initial_clock_emits.clock_emits.splitlines():
+            match = re.match(r'([01xz])\s*(.+)', line)
+            if match:
+                self.signals[match.group(2)] = Signal(match.group(1))
+
+            match = re.match(r'b([01zx]+)\s+(.+)', line)
+            if match:
+                self.signals[match.group(2)] = Signal('b' + match.group(1))
 
     def __init__(self, vcd_file: VCDFile):
         self.current_clock_emits_index = 0
         self.source_vcd_file = vcd_file
+        self.signals = {}
+        self.parse_initial_signals_values()
 
     def next_vcd_clock_chunk_available(self):
         return self.current_clock_emits_index < len(self.source_vcd_file.clock_emits_list)
 
+    def dump_last_signals_values(self):
+        content = ''
+        content += '#0\n'
+        content += '$dumpvars\n'
+        for signal_code, signal in self.signals.items():
+            if signal.last_signal_value.startswith('b'):
+                content += f'{signal.last_signal_value} {signal_code}\n'
+            else:
+                content += f'{signal.last_signal_value}{signal_code}\n'
+
+        return content
+    
+    def apply_last_signal_values(self, vcd_chunk: str):
+        for line in vcd_chunk.splitlines():
+            match = re.match(r'([01xz])(.+)', line)
+            if match:
+                self.signals[match.group(2)].last_signal_value = match.group(1)
+
+            match = re.match(r'b([01xz]+)\s+(.+)', line)
+            if match:
+                self.signals[match.group(2)].last_signal_value = 'b' + match.group(1)
+
     def create_next_vcd_clock_chunk(self):
         vcd_contents = self.source_vcd_file.header_contents
-        vcd_contents += self.source_vcd_file.initial_clock_emits.clock_emits
+        vcd_contents += self.dump_last_signals_values()
         vcd_contents += self.source_vcd_file.clock_emits_list[self.current_clock_emits_index].clock_emits
 
         self.current_clock_emits_index += 1
+
+        if self.next_vcd_clock_chunk_available():
+            self.apply_last_signal_values(self.source_vcd_file.clock_emits_list[self.current_clock_emits_index].clock_emits)
 
         return vcd_contents
     
@@ -113,6 +165,7 @@ parser = argparse.ArgumentParser(
     formatter_class=argparse.RawDescriptionHelpFormatter,
     description="""""")
 parser.add_argument('--vcd', action='store', help='VCD file')
+parser.add_argument('--clock_period', action='store', type=int, help='Clock period')
 parser.set_defaults(stop=True)
 args = parser.parse_args()
 
@@ -122,7 +175,7 @@ open_sta_script = 'power_vcd.tcl'
 power_report_file = 'output_power'
 
 vcd = VCDFile()
-vcd.parse(args.vcd)
+vcd.parse(args.vcd, args.clock_period)
 
 vcd_iterator = VCDIterator(vcd)
 
