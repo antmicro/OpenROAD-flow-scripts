@@ -60,7 +60,7 @@ class VCDFile:
                     reading_dumpvars = False
 
                     timestamp = int(match.group(1))
-                    if timestamp - self.last_timestamp > clock_period or self.current_clock_emits is None:
+                    if timestamp - self.last_timestamp >= clock_period or self.current_clock_emits is None:
                         if self.current_clock_emits is not None:
                             self.clock_emits_list.append(self.current_clock_emits)
                             self.last_timestamp += clock_period
@@ -121,6 +121,8 @@ class VCDIterator:
                 content += f'{signal.last_signal_value} {signal_code}\n'
             else:
                 content += f'{signal.last_signal_value}{signal_code}\n'
+
+        content += '$end\n'
 
         return content
     
@@ -189,7 +191,10 @@ vcd_iterator = VCDIterator(vcd)
 
 peak_power = 0
 
+clock_cycle_index = 0
 while vcd_iterator.next_vcd_clock_chunk_available():
+    print(f'Processing clock cycle {clock_cycle_index}')
+    clock_cycle_index += 1
     vcd_contents = vcd_iterator.create_next_vcd_clock_chunk()
     save_to_file(vcd_contents, scratch_file_name)
     subprocess.run([open_sta_command, open_sta_script], capture_output=True, text=True)
