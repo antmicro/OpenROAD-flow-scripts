@@ -400,7 +400,7 @@ for(n=0;n<284;n=n+1)
 
 	//$display("INFO: (a) Vector %0d: xpected %x, Got %x %t", n, ciph, text_out, $time);
 
-	if(text_out != ciph | (|text_out)==1'bx)
+	if(text_out != ciph)
 	   begin
 		$display("ERROR: (a) Vector %0d mismatch. Expected %x, Got %x",
 			n, ciph, text_out);
@@ -412,7 +412,7 @@ for(n=0;n<284;n=n+1)
 
 	//$display("INFO: (b) Vector %0d: xpected %x, Got %x", n, plain, text_out2);
 
-	if(text_out2 != plain | (|text_out2)==1'bx)
+	if(text_out2 != plain)
 	   begin
 		$display("ERROR: (b) Vector %0d mismatch. Expected %x, Got %x",
 			n, plain, text_out2);
