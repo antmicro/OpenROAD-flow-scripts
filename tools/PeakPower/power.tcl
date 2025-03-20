@@ -4,10 +4,9 @@ read_verilog gcd_sky130hd.v
 link_design gcd
 read_sdc gcd_sky130hd.sdc
 read_spef gcd_sky130hd.spef
-# Generate vcd file
-#  iverilog -o gcd_tb gcd_tb.v
-#  vvp gcd_tb
-read_vcd -scope gcd_tb/gcd1 gcd_sky130hd.vcd
+
+source input_trace
+set_pin_activity_and_duty
+
 report_activity_annotation
-report_power
-exit
+report_power > output_power
