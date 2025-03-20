@@ -18,7 +18,7 @@ import argparse
 import re
 import subprocess
 import os
-import shutil
+import matplotlib.pyplot as plt
 
 
 def read_from_file(file_name: str):
@@ -31,7 +31,6 @@ def search_for_total_power(report_power: list[str]):
         match = re.match(r'Total\s+(([\w\.\-]+\s+)+)', line)
         if match:
             total_power = match.group(2).replace(' ', '')
-            print(f'Total power: {total_power} Watts')
             return float(total_power)
         
     return 0
@@ -53,10 +52,27 @@ power_report_file = 'output_power'
 files = os.listdir(args.input_dir)
 files = sorted(files)
 
+power_results = []
+clock_cycles_indices = []
+
+current_clock_cycle = 0
 for file in files:
-    print(file)
+    clock_cycles_indices.append(current_clock_cycle)
+    print(f'Processing clock cycle no. {current_clock_cycle}')
+    current_clock_cycle += 1
+
     os.symlink(args.input_dir + "/" + file, input_trace_file)
     subprocess.run([open_sta_command, "-exit", open_sta_script], capture_output=True, text=True)
     report_contents = read_from_file(power_report_file)
     total_power = search_for_total_power(report_contents)
+    power_results.append(total_power)
     os.remove(input_trace_file)
+
+plt.plot(clock_cycles_indices, power_results, marker='o', linestyle='-', color='g')
+
+plt.title("Power consumption over time")
+plt.xlabel("Clock cycles")
+plt.ylabel("Power consumption")
+plt.grid(True)
+
+plt.show()
