@@ -45,16 +45,11 @@ module gcd_tb();
       #clk_period
       #clk_period
       #clk_period
-      #clk_period
-      #clk_period
-      #clk_period
-      #clk_period
-      #clk_period
-
-      reset = 1;
+      
+      #clk_period reset = 1;
       #clk_period reset = 0;
 
-      #clk_period a = 6545412886; b = 2158; req_val = 1;
+      #clk_period a = 1053775287; b = 412654; req_val = 1;
       #clk_period req_val = 0;
       #clk_period
       #clk_period
@@ -64,11 +59,39 @@ module gcd_tb();
       #clk_period resp_rdy = 1;
       #clk_period resp_rdy = 0;
       #clk_period
-
-      reset = 1;
+      
+      #clk_period reset = 1;
       #clk_period reset = 0;
 
-      #clk_period a = 15; b = 150; req_val = 1;
+      #clk_period a = 16; b = 8; req_val = 1;
+      #clk_period req_val = 0;
+      #clk_period
+      #clk_period
+      #clk_period
+      #clk_period
+      #clk_period
+      #clk_period resp_rdy = 1;
+      #clk_period resp_rdy = 0;
+      #clk_period
+      
+      #clk_period reset = 1;
+      #clk_period reset = 0;
+
+      #clk_period a = 15; b = 12; req_val = 1;
+      #clk_period req_val = 0;
+      #clk_period
+      #clk_period
+      #clk_period
+      #clk_period
+      #clk_period
+      #clk_period resp_rdy = 1;
+      #clk_period resp_rdy = 0;
+      #clk_period
+      
+      #clk_period reset = 1;
+      #clk_period reset = 0;
+
+      #clk_period a = 3873906103; b = 128000; req_val = 1;
       #clk_period req_val = 0;
       #clk_period
       #clk_period

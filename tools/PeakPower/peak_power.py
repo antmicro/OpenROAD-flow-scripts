@@ -71,8 +71,8 @@ for file in files:
 plt.plot(clock_cycles_indices, power_results, marker='o', linestyle='-', color='g')
 
 plt.title("Power consumption over time")
-plt.xlabel("Clock cycles")
-plt.ylabel("Power consumption")
+plt.xlabel("Clock cycle")
+plt.ylabel("Power consumption (Watts)")
 plt.grid(True)
 
 plt.show()
