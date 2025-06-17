@@ -17,8 +17,9 @@ if {[env_var_exists_and_non_empty SYNTH_KEEP_MODULES]} {
   }
 }
 
+set flatten_hier_separator .
 if {[env_var_exists_and_non_empty SYNTH_HIER_SEPARATOR]} {
-  flatten -separator $::env(SYNTH_HIER_SEPARATOR)
+  set flatten_hier_separator $::env(SYNTH_HIER_SEPARATOR)
 }
 
 set synth_full_args $::env(SYNTH_ARGS)
@@ -30,7 +31,7 @@ if {[env_var_exists_and_non_empty SYNTH_OPERATIONS_ARGS]} {
 
 if {![env_var_equals SYNTH_HIERARCHICAL 1]} {
   # Perform standard coarse-level synthesis script, flatten right away
-  # (-flatten part of $synth_args per default)
+  flatten -separator $flatten_hier_separator
   synth -run :fine {*}$synth_full_args
 } else {
   # Perform standard coarse-level synthesis script,
@@ -47,7 +48,9 @@ if {![env_var_equals SYNTH_HIERARCHICAL 1]} {
     keep_hierarchy
   }
 
-  # Re-run coarse-level script, this time do pass -flatten
+  flatten -separator $flatten_hier_separator
+
+  # Re-run coarse-level script
   synth -run coarse:fine {*}$synth_full_args
 }
 
