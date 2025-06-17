@@ -676,7 +676,7 @@ SYNTH_KEEP_MODULES:
 SYNTH_ARGS:
   description: |
     Optional synthesis variables for yosys.
-  default: -flatten
+  default: ""
 VERILOG_TOP_PARAMS:
   description: |
     Apply toplevel params (if exist).
