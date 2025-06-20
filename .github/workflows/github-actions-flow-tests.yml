@@ -1,0 +1,274 @@
+name: Run ORFS flow tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CI_OS_NAME: linux
+  CI_COMMIT: ${{ github.sha }}
+  CCACHE_COMPRESS: 1
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_LIMIT_MULTIPLE: 0.95
+  INSTALL_DIR: ${{ github.workspace }}/install
+  RELOC_DIR: ${{ github.workspace }}/relloc
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  orfs-flow-tests-asap7:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    name: Static power verilator flow | ${{ matrix.os }}
+    env:
+      CI_BUILD_STAGE_NAME: build
+      CI_RUNS_ON: ${{ matrix.os }}
+      CACHE_BASE_KEY: build-${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-12 gcc clang make flex bison help2man perl python3 \
+            python3-dev libfl2 libfl-dev zlib1g zlib1g-dev ccache mold libunwind-dev \
+            libgoogle-perftools-dev numactl tcl tcl-dev swig cmake libeigen3-dev time \
+            libreadline-dev pipx libboost-all-dev libgtest-dev libspdlog-dev liblemon-dev \
+            golang-github-intel-tfortools-dev libppix-editortools-perl klayout libelf-dev
+          pip3 install pyyaml
+
+      - name: Build OpenROAD
+        run: |
+          git submodule update --init --recursive tools/yosys tools/OpenROAD
+          sudo ./tools/OpenROAD/etc/DependencyInstaller.sh -common
+          ./build_openroad.sh -t $(nproc) --local
+
+      - name: Install eqy
+        run: |
+          git clone --depth=1 -b "v0.54" https://github.com/YosysHQ/eqy
+          cd eqy
+          make -j $(nproc)
+          make install
+
+      - name: aes-mbff asap7
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh aes-mbff asap7
+
+      - name: uart asap7
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh uart asap7
+
+  orfs-flow-tests-gf180:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    name: Static power verilator flow | ${{ matrix.os }}
+    env:
+      CI_BUILD_STAGE_NAME: build
+      CI_RUNS_ON: ${{ matrix.os }}
+      CACHE_BASE_KEY: build-${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-12 gcc clang make flex bison help2man perl python3 \
+            python3-dev libfl2 libfl-dev zlib1g zlib1g-dev ccache mold libunwind-dev \
+            libgoogle-perftools-dev numactl tcl tcl-dev swig cmake libeigen3-dev time \
+            libreadline-dev pipx libboost-all-dev libgtest-dev libspdlog-dev liblemon-dev \
+            golang-github-intel-tfortools-dev libppix-editortools-perl klayout libelf-dev
+          pip3 install pyyaml
+
+      - name: Build OpenROAD
+        run: |
+          git submodule update --init --recursive tools/yosys tools/OpenROAD
+          sudo ./tools/OpenROAD/etc/DependencyInstaller.sh -common
+          ./build_openroad.sh -t $(nproc) --local
+
+      - name: Install eqy
+        run: |
+          git clone --depth=1 -b "v0.54" https://github.com/YosysHQ/eqy
+          cd eqy
+          make -j $(nproc)
+          make install
+
+      - name: jpeg gf180
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh jpeg gf180
+
+      - name: riscv32i gf180
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh riscv32i gf180
+
+  orfs-flow-tests-ihp-sg13g2:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    name: Static power verilator flow | ${{ matrix.os }}
+    env:
+      CI_BUILD_STAGE_NAME: build
+      CI_RUNS_ON: ${{ matrix.os }}
+      CACHE_BASE_KEY: build-${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-12 gcc clang make flex bison help2man perl python3 \
+            python3-dev libfl2 libfl-dev zlib1g zlib1g-dev ccache mold libunwind-dev \
+            libgoogle-perftools-dev numactl tcl tcl-dev swig cmake libeigen3-dev time \
+            libreadline-dev pipx libboost-all-dev libgtest-dev libspdlog-dev liblemon-dev \
+            golang-github-intel-tfortools-dev libppix-editortools-perl klayout libelf-dev
+          pip3 install pyyaml
+
+      - name: Build OpenROAD
+        run: |
+          git submodule update --init --recursive tools/yosys tools/OpenROAD
+          sudo ./tools/OpenROAD/etc/DependencyInstaller.sh -common
+          ./build_openroad.sh -t $(nproc) --local
+
+      - name: Install eqy
+        run: |
+          git clone --depth=1 -b "v0.54" https://github.com/YosysHQ/eqy
+          cd eqy
+          make -j $(nproc)
+          make install
+
+      - name: gcd ihp-sg13g2
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh gcd ihp-sg13g2
+
+      - name: riscv32i ihp-sg13g2
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh riscv32i ihp-sg13g2
+
+  orfs-flow-tests-sky130hd:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    name: Static power verilator flow | ${{ matrix.os }}
+    env:
+      CI_BUILD_STAGE_NAME: build
+      CI_RUNS_ON: ${{ matrix.os }}
+      CACHE_BASE_KEY: build-${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-12 gcc clang make flex bison help2man perl python3 \
+            python3-dev libfl2 libfl-dev zlib1g zlib1g-dev ccache mold libunwind-dev \
+            libgoogle-perftools-dev numactl tcl tcl-dev swig cmake libeigen3-dev time \
+            libreadline-dev pipx libboost-all-dev libgtest-dev libspdlog-dev liblemon-dev \
+            golang-github-intel-tfortools-dev libppix-editortools-perl klayout libelf-dev
+          pip3 install pyyaml
+
+      - name: Build OpenROAD
+        run: |
+          git submodule update --init --recursive tools/yosys tools/OpenROAD
+          sudo ./tools/OpenROAD/etc/DependencyInstaller.sh -common
+          ./build_openroad.sh -t $(nproc) --local
+
+      - name: Install eqy
+        run: |
+          git clone --depth=1 -b "v0.54" https://github.com/YosysHQ/eqy
+          cd eqy
+          make -j $(nproc)
+          make install
+
+      - name: gcd sky130hd
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh gcd sky130hd
+
+      - name: riscv32i sky130hd
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh riscv32i sky130hd
+
+  orfs-flow-tests-sky130hs:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    name: Static power verilator flow | ${{ matrix.os }}
+    env:
+      CI_BUILD_STAGE_NAME: build
+      CI_RUNS_ON: ${{ matrix.os }}
+      CACHE_BASE_KEY: build-${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++-12 gcc clang make flex bison help2man perl python3 \
+            python3-dev libfl2 libfl-dev zlib1g zlib1g-dev ccache mold libunwind-dev \
+            libgoogle-perftools-dev numactl tcl tcl-dev swig cmake libeigen3-dev time \
+            libreadline-dev pipx libboost-all-dev libgtest-dev libspdlog-dev liblemon-dev \
+            golang-github-intel-tfortools-dev libppix-editortools-perl klayout libelf-dev
+          pip3 install pyyaml
+
+      - name: Install eqy
+        run: |
+          git clone https://github.com/YosysHQ/eqy
+          cd eqy
+          make -j $(nproc)
+          make install
+
+      - name: Build OpenROAD
+        run: |
+          git submodule update --init --recursive tools/yosys tools/OpenROAD
+          sudo ./tools/OpenROAD/etc/DependencyInstaller.sh -common
+          ./build_openroad.sh -t $(nproc) --local
+
+      - name: jpeg sky130hs
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh jpeg sky130hs
+
+      - name: riscv32i sky130hs
+        run: |
+          source ./env.sh
+
+          ./flow/test/test_helper.sh riscv32i sky130hs
