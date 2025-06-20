@@ -676,7 +676,7 @@ SYNTH_KEEP_MODULES:
 SYNTH_ARGS:
   description: |
     Optional synthesis variables for yosys.
-  default: ""
+  default: -flatten
 SYNTH_HIER_SEPARATOR:
   description: |
     Separator used for the synthesis flatten stage.
